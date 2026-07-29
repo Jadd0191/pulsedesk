@@ -50,22 +50,15 @@ class SystemState(Enum):
 
 
 # ============================================================================
-# Evento Base
+# Evento Base - Sin valores por defecto para evitar problemas de herencia
 # ============================================================================
 
 @dataclass(frozen=True)
 class Event:
     """
     Clase base para todos los eventos del sistema.
-    Todo evento debe tener un timestamp y un ID único.
     """
-    timestamp: datetime = field(default_factory=datetime.now)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    
-    def __post_init__(self):
-        """Validación básica del evento"""
-        if not self.event_id:
-            object.__setattr__(self, 'event_id', str(uuid.uuid4()))
+    pass
 
 
 # ============================================================================
@@ -89,6 +82,8 @@ class TelemetryReceived(Event):
     engine_status: bool
     fuel_level: float      # 0-100%
     timestamp_data: datetime  # Timestamp de los datos (no del evento)
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -100,9 +95,11 @@ class TelemetryBatchReceived(Event):
     Consumidor: TelemetryPanel, StateStore
     Payload: Lista de datos de telemetría
     """
-    vehicles_data: List[Dict[str, Any]]  # Lista de diccionarios con datos de telemetría
+    vehicles_data: List[Dict[str, Any]]
     count: int
     source: str
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -122,9 +119,11 @@ class AlertRaised(Event):
     severity: AlertSeverity
     vehicle_id: str
     message: str
-    category: str  # e.g., "mechanical", "route", "safety"
+    category: str
     timestamp_data: datetime
     acknowledged: bool = False
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -139,6 +138,8 @@ class AlertAcknowledged(Event):
     alert_id: str
     acknowledged_by: str = "operator"
     timestamp_ack: datetime = field(default_factory=datetime.now)
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -152,6 +153,8 @@ class AlertCleared(Event):
     """
     alert_id: str
     reason: str = "resolved"
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -170,6 +173,8 @@ class SourceStarted(Event):
     source_name: str
     source_type: str
     status: SourceStatus = SourceStatus.RUNNING
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -183,6 +188,8 @@ class SourceStopped(Event):
     """
     source_name: str
     reason: Optional[str] = None
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -199,6 +206,8 @@ class SourceFailed(Event):
     retry_count: int = 0
     max_retries: int = 3
     is_critical: bool = False
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -211,7 +220,9 @@ class SourceRecovered(Event):
     Payload: Información de recuperación
     """
     source_name: str
-    recovery_time: float  # segundos que tomó recuperarse
+    recovery_time: float
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -230,6 +241,8 @@ class StateChanged(Event):
     old_state: SystemState
     new_state: SystemState
     reason: Optional[str] = None
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -241,9 +254,11 @@ class SystemHealthCheck(Event):
     Consumidor: StateStore, UI
     Payload: Estado de salud del sistema
     """
-    status: str  # "healthy", "degraded", "unhealthy"
-    components_status: Dict[str, str]  # nombre_componente -> estado
+    status: str
+    components_status: Dict[str, str]
     uptime_seconds: float
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -259,9 +274,11 @@ class ShutdownRequested(Event):
     Consumidor: EventLoop, Sources
     Payload: Tipo y razón del apagado
     """
-    shutdown_type: str  # "graceful", "forced"
+    shutdown_type: str
     reason: Optional[str] = None
-    timeout_seconds: float = 5.0  # tiempo máximo para apagado graceful
+    timeout_seconds: float = 5.0
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -276,6 +293,8 @@ class ShutdownComplete(Event):
     success: bool
     duration_seconds: float
     errors: List[str] = field(default_factory=list)
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -289,6 +308,8 @@ class SystemInitialized(Event):
     """
     config: Dict[str, Any]
     start_time: datetime = field(default_factory=datetime.now)
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -304,9 +325,11 @@ class UIAction(Event):
     Consumidor: StateStore, Workers
     Payload: Acción del usuario
     """
-    action: str  # e.g., "refresh", "filter", "export"
-    target: str  # e.g., "telemetry", "alerts"
+    action: str
+    target: str
     params: Dict[str, Any] = field(default_factory=dict)
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -321,6 +344,8 @@ class UserPreferenceChanged(Event):
     preference_name: str
     old_value: Any
     new_value: Any
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -339,6 +364,8 @@ class TaskStarted(Event):
     task_id: str
     task_name: str
     description: str
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -355,6 +382,8 @@ class TaskCompleted(Event):
     success: bool
     duration_seconds: float
     result: Optional[Any] = None
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -370,53 +399,20 @@ class TaskFailed(Event):
     task_name: str
     error_message: str
     retry_count: int = 0
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
-
-# ============================================================================
-# Tabla de Eventos (Documentación)
-# ============================================================================
-
-"""
-TABLA DE EVENTOS - EMISOR → CONSUMIDOR → PAYLOAD
-
-| Evento | Emisor | Consumidor | Payload |
-|--------|--------|------------|---------|
-| TelemetryReceived | TelemetryFileSource | TelemetryPanel, StateStore | vehicle_id, speed, temperature, latitude, longitude, engine_status, fuel_level, timestamp_data |
-| TelemetryBatchReceived | TelemetryFileSource | TelemetryPanel, StateStore | vehicles_data, count, source |
-| AlertRaised | AlertsAPISource | AlertsPanel, StateStore | alert_id, severity, vehicle_id, message, category, timestamp_data, acknowledged |
-| AlertAcknowledged | UI (AlertsPanel) | StateStore | alert_id, acknowledged_by, timestamp_ack |
-| AlertCleared | UI (AlertsPanel) / Source | StateStore | alert_id, reason |
-| SourceStarted | TelemetryFileSource, AlertsAPISource, HeartbeatSource | StateStore, EventLoop, UI | source_name, source_type, status |
-| SourceStopped | TelemetryFileSource, AlertsAPISource, HeartbeatSource | StateStore, EventLoop | source_name, reason |
-| SourceFailed | TelemetryFileSource, AlertsAPISource, HeartbeatSource | StateStore, UI | source_name, error_message, retry_count, max_retries, is_critical |
-| SourceRecovered | TelemetryFileSource, AlertsAPISource, HeartbeatSource | StateStore, UI | source_name, recovery_time |
-| StateChanged | StateStore | UI, EventLoop | old_state, new_state, reason |
-| SystemHealthCheck | HeartbeatSource | StateStore, UI | status, components_status, uptime_seconds |
-| ShutdownRequested | UI / Signal | EventLoop, Sources | shutdown_type, reason, timeout_seconds |
-| ShutdownComplete | EventLoop | UI, logs | success, duration_seconds, errors |
-| SystemInitialized | EventLoop | UI, Sources | config, start_time |
-| UIAction | UI (widgets) | StateStore, Workers | action, target, params |
-| UserPreferenceChanged | UI (settings panel) | UI, StateStore | preference_name, old_value, new_value |
-| TaskStarted | Worker | UI, StateStore | task_id, task_name, description |
-| TaskCompleted | Worker | UI, StateStore | task_id, task_name, success, duration_seconds, result |
-| TaskFailed | Worker | UI, StateStore | task_id, task_name, error_message, retry_count |
-"""
 
 # ============================================================================
 # Utilidades para testing
 # ============================================================================
 
-def create_test_event(event_type: type, **kwargs) -> Event:
-    """Helper para crear eventos de prueba en tests."""
-    return event_type(**kwargs)
-
-
 def get_event_metadata(event: Event) -> Dict[str, Any]:
     """Obtiene metadatos de un evento."""
     return {
-        "event_id": event.event_id,
+        "event_id": getattr(event, 'event_id', None),
         "event_type": event.__class__.__name__,
-        "timestamp": event.timestamp.isoformat(),
+        "timestamp": getattr(event, 'timestamp', datetime.now()).isoformat(),
     }
 
 
