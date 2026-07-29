@@ -1,0 +1,47 @@
+
+---
+
+## 📄 **.gitignore**
+
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+*.egg
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Profiling
+*.prof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+pulsedesk.ini
+*.db
+*.sqlite
