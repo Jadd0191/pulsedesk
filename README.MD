@@ -7,15 +7,21 @@
 - ✅ **Fase 1**: Plan RAD y requisitos
 - ✅ **Fase 2**: Catálogo de eventos
 - ✅ **Fase 3**: Esqueleto del event loop
-- ⏳ **Fase 4**: Prototipo visual (pendiente)
-- ⏳ **Fase 5**: Emisor de eventos (pendiente)
-- ⏳ **Fase 6**: Patrones Observer/PubSub (pendiente)
-- ⏳ **Fase 7**: Estado y concurrencia (pendiente)
-- ⏳ **Fase 8**: Testing y profiling (pendiente)
+- ✅ **Fase 4**: Prototipo visual
+- ✅ **Fase 5**: Emisor de eventos propio
+- ✅ **Fase 6**: Patrones Observer/PubSub
+- ✅ **Fase 7**: Estado y concurrencia
+- ✅ **Fase 8**: Testing, depuración y profiling
 - ⏳ **Fase 9**: Integración y empaquetado (pendiente)
 
-### Ejecutar el sistema
+### Pruebas
 
 ```bash
-# Desde la raíz del proyecto
-python main.py
+# Ejecutar todas las pruebas
+pytest tests/ -v
+
+# Ejecutar con cobertura
+pytest tests/ --cov=core --cov=workers
+
+# Ejecutar solo pruebas del bus
+pytest tests/test_event_bus.py -v

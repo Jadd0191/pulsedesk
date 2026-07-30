@@ -1,0 +1,30 @@
+Wed Jul 29 21:29:52 2026    profile_results.prof
+
+         9484 function calls in 0.007 seconds
+
+   Ordered by: cumulative time
+   List reduced from 31 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001    0.007    0.007 C:\Users\Doss\Downloads\Video\pulsedesk\tools\profile_run.py:24(run_benchmark)
+      500    0.000    0.000    0.003    0.000 C:\Users\Doss\Downloads\Video\pulsedesk\core\events.py:62(<lambda>)
+       12    0.001    0.000    0.001    0.000 {built-in method builtins.print}
+      500    0.001    0.000    0.001    0.000 C:\Users\Doss\AppData\Local\Programs\Python\Python314\Lib\uuid.py:774(uuid4)
+      500    0.001    0.000    0.001    0.000 C:\Users\Doss\Downloads\Video\pulsedesk\core\event_bus.py:46(publish)
+      500    0.000    0.000    0.001    0.000 C:\Users\Doss\AppData\Local\Programs\Python\Python314\Lib\uuid.py:331(__str__)
+      500    0.000    0.000    0.001    0.000 C:\Users\Doss\AppData\Local\Programs\Python\Python314\Lib\uuid.py:398(hex)
+      500    0.000    0.000    0.001    0.000 C:\Users\Doss\AppData\Local\Programs\Python\Python314\Lib\uuid.py:267(_from_int)
+      950    0.000    0.000    0.000    0.000 {built-in method now}
+       50    0.000    0.000    0.000    0.000 <string>:2(__init__)
+        3    0.000    0.000    0.000    0.000 C:\Users\Doss\Downloads\Video\pulsedesk\core\event_bus.py:22(subscribe)
+      500    0.000    0.000    0.000    0.000 C:\Users\Doss\AppData\Local\Programs\Python\Python314\Lib\uuid.py:335(bytes)
+      500    0.000    0.000    0.000    0.000 {built-in method nt.urandom}
+      500    0.000    0.000    0.000    0.000 {method 'to_bytes' of 'int' objects}
+      500    0.000    0.000    0.000    0.000 {method 'hex' of 'bytes' objects}
+      503    0.000    0.000    0.000    0.000 {method '__enter__' of '_thread.lock' objects}
+      500    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+      503    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.lock' objects}
+      500    0.000    0.000    0.000    0.000 {built-in method from_bytes}
+      500    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x00007FF961AF7D90}
+
+
