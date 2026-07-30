@@ -25,6 +25,7 @@ from core.events import (
     SystemState
 )
 from core.sources.base import Source
+from core.event_bus import EventBus
 
 
 class EventLoop:
@@ -38,7 +39,7 @@ class EventLoop:
     4. Manejar apagado limpio
     """
     
-    def __init__(self):
+    def __init__(self, event_bus: Optional[EventBus] = None):
         self.sources: List[Source] = []
         self.tasks: List[asyncio.Task] = []
         self.running: bool = False
@@ -46,6 +47,11 @@ class EventLoop:
         self.state: SystemState = SystemState.INITIALIZING
         self.start_time: Optional[datetime] = None
         self._shutdown_timeout: float = 5.0
+        self.event_bus: Optional[EventBus] = event_bus
+    
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Establece el bus de eventos."""
+        self.event_bus = event_bus
     
     def register_source(self, source: Source) -> None:
         """
@@ -82,10 +88,38 @@ class EventLoop:
             try:
                 await source.start()
                 print(f"[EventLoop] Source {source.name} started successfully")
+                
+                # Publicar evento de inicio
+                if self.event_bus:
+                    event = SourceStarted(
+                        source_name=source.name,
+                        source_type=source.__class__.__name__,
+                    )
+                    self.event_bus.publish(event)
+                
             except Exception as e:
                 print(f"[EventLoop] Failed to start source {source.name}: {e}")
+                if self.event_bus:
+                    event = SourceFailed(
+                        source_name=source.name,
+                        error_message=str(e),
+                        is_critical=True
+                    )
+                    self.event_bus.publish(event)
         
         self.state = SystemState.RUNNING
+        
+        # Publicar evento de inicialización
+        if self.event_bus:
+            init_event = SystemInitialized(
+                config={
+                    "sources_count": len(self.sources),
+                    "sources": [s.name for s in self.sources]
+                },
+                start_time=self.start_time
+            )
+            self.event_bus.publish(init_event)
+        
         print(f"[EventLoop] System initialized with {len(self.sources)} sources")
     
     async def run(self) -> None:
@@ -123,6 +157,14 @@ class EventLoop:
                             task.result()
                         except Exception as e:
                             print(f"[EventLoop] Task failed: {e}")
+                            if self.event_bus:
+                                self.event_bus.publish(
+                                    SourceFailed(
+                                        source_name="unknown",
+                                        error_message=str(e),
+                                        is_critical=False
+                                    )
+                                )
             
         except asyncio.CancelledError:
             print("[EventLoop] Event loop cancelled")
@@ -142,13 +184,27 @@ class EventLoop:
             async for event in source:
                 if self.shutdown_requested:
                     break
-                # Solo imprimir el evento, no intentar manejarlo
-                print(f"[{source.name}] Event: {event.__class__.__name__}")
+                
+                # Publicar evento en el bus
+                if self.event_bus:
+                    self.event_bus.publish(event)
+                else:
+                    # Si no hay bus, solo imprimir
+                    print(f"[{source.name}] Event: {event.__class__.__name__}")
+                    
         except asyncio.CancelledError:
             print(f"[EventLoop] Source {source.name} task cancelled")
             raise
         except Exception as e:
             print(f"[EventLoop] Source {source.name} error: {e}")
+            if self.event_bus:
+                self.event_bus.publish(
+                    SourceFailed(
+                        source_name=source.name,
+                        error_message=str(e),
+                        is_critical=False
+                    )
+                )
     
     async def shutdown(self, timeout: float = 5.0) -> None:
         """
@@ -194,6 +250,15 @@ class EventLoop:
             duration = (datetime.now() - start_time).total_seconds()
             self.state = SystemState.SHUTDOWN
             self.running = False
+            
+            # Publicar evento de apagado
+            if self.event_bus:
+                shutdown_event = ShutdownComplete(
+                    success=len(errors) == 0,
+                    duration_seconds=duration,
+                    errors=errors
+                )
+                self.event_bus.publish(shutdown_event)
             
             print(f"[EventLoop] Shutdown complete in {duration:.2f}s")
             if errors:

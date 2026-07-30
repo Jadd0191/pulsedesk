@@ -1,163 +1,114 @@
 """
-Ventana principal de PulseDesk RAD usando CustomTkinter.
-
-Esta es la aplicación de escritorio que muestra:
-- Panel de telemetría
-- Lista de alertas
-- Indicador de estado del sistema
+Ventana principal simplificada para debugging.
 """
 
 import customtkinter as ctk
 from typing import Optional
-import asyncio
 import threading
-from datetime import datetime
+import queue
 
+from core.event_bus import EventBus
 from core.events import (
     TelemetryReceived,
     AlertRaised,
     SystemHealthCheck,
     SourceFailed,
-    SystemState
+    SystemState,
+    ShutdownRequested
 )
-from ui.panels.telemetry_panel import TelemetryPanel
-from ui.panels.alerts_panel import AlertsPanel
-from ui.panels.status_panel import StatusPanel
 
 
 class PulseDeskApp(ctk.CTk):
-    """
-    Aplicación principal de PulseDesk.
+    """Aplicación principal simplificada."""
     
-    Gestiona la ventana y los paneles de la interfaz.
-    """
-    
-    def __init__(self, event_loop=None):
-        """
-        Inicializa la aplicación.
-        
-        Args:
-            event_loop: Referencia al event loop del sistema
-        """
+    def __init__(self, event_bus: Optional[EventBus] = None):
         super().__init__()
         
-        self.event_loop = event_loop
+        self.event_bus = event_bus
         self.running = True
-        self._loop = None  # Almacenar referencia al loop asyncio
+        self._handlers_registered = False
+        self._event_queue = queue.Queue()
         
-        # Configurar ventana
-        self.title("PulseDesk RAD - Centro de Control de Eventos")
-        self.geometry("1200x700")
-        self.minsize(1000, 600)
+        self.title("PulseDesk RAD - Debug")
+        self.geometry("800x600")
         
-        # Configurar tema
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         
-        # Crear layout
-        self._create_layout()
+        # Label de estado
+        self.status_label = ctk.CTkLabel(
+            self,
+            text="Esperando eventos...",
+            font=ctk.CTkFont(size=16)
+        )
+        self.status_label.pack(pady=20)
         
-        # Iniciar actualización de UI
+        # Textbox para logs
+        self.log_text = ctk.CTkTextbox(self, height=400)
+        self.log_text.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        self.log_text.insert("end", "=== PulseDesk Debug ===\n")
+        self.log_text.insert("end", f"EventBus: {event_bus is not None}\n\n")
+        
+        self._register_handlers()
         self.after(100, self._update_ui)
-        
-        # Configurar cierre de ventana
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
     
-    def set_event_loop(self, loop):
-        """Establece el event loop asyncio."""
-        self._loop = loop
+    def _register_handlers(self):
+        if not self.event_bus:
+            self.log_text.insert("end", "ERROR: No event bus\n")
+            return
+        
+        if self._handlers_registered:
+            return
+        
+        self.event_bus.subscribe(TelemetryReceived, self._queue_event)
+        self.event_bus.subscribe(SystemHealthCheck, self._queue_event)
+        
+        self._handlers_registered = True
+        self.log_text.insert("end", "Handlers registrados en el bus\n")
+        self.log_text.see("end")
     
-    def _create_layout(self):
-        """Crea la estructura de la ventana."""
-        # Frame principal con padding
-        self.main_frame = ctk.CTkFrame(self)
-        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Grid: 2 columnas, 2 filas
-        self.main_frame.grid_columnconfigure(0, weight=2)
-        self.main_frame.grid_columnconfigure(1, weight=1)
-        self.main_frame.grid_rowconfigure(0, weight=1)
-        self.main_frame.grid_rowconfigure(1, weight=0)
-        
-        # Panel izquierdo: Telemetría (ocupa columna 0, filas 0-1)
-        self.telemetry_panel = TelemetryPanel(self.main_frame)
-        self.telemetry_panel.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 5), pady=(0, 5))
-        
-        # Panel superior derecho: Alertas
-        self.alerts_panel = AlertsPanel(self.main_frame)
-        self.alerts_panel.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 5))
-        
-        # Panel inferior derecho: Estado
-        self.status_panel = StatusPanel(self.main_frame)
-        self.status_panel.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
+    def _queue_event(self, event):
+        self._event_queue.put(event)
+        self.log_text.insert("end", f"[QUEUE] Evento encolado: {event.__class__.__name__}\n")
+        self.log_text.see("end")
     
     def _update_ui(self):
-        """Actualiza la UI desde el event loop (thread-safe)."""
         if not self.running:
             return
         
         try:
-            # Actualizar paneles
-            self.telemetry_panel.update()
-            self.alerts_panel.update()
-            self.status_panel.update()
-        except Exception as e:
-            print(f"[UI] Error updating: {e}")
+            while True:
+                event = self._event_queue.get_nowait()
+                self._process_event(event)
+        except queue.Empty:
+            pass
         
-        # Programar próxima actualización
         if self.running:
             self.after(100, self._update_ui)
     
-    def _on_closing(self):
-        """Maneja el cierre de la ventana."""
-        print("[UI] Window closing...")
-        self.running = False
-        
-        # Solicitar apagado al event loop
-        if self.event_loop and not self.event_loop.shutdown_requested:
-            try:
-                # Usar el loop almacenado si existe
-                if self._loop and not self._loop.is_closed():
-                    # Crear tarea de apagado en el loop correcto
-                    asyncio.run_coroutine_threadsafe(
-                        self.event_loop.shutdown(),
-                        self._loop
-                    )
-                else:
-                    print("[UI] No event loop available for shutdown")
-            except Exception as e:
-                print(f"[UI] Error requesting shutdown: {e}")
-        
-        # Destruir ventana
-        self.destroy()
-    
-    def handle_event(self, event) -> None:
-        """
-        Maneja un evento del sistema (llamado desde el event loop).
-        
-        Args:
-            event: Evento a procesar
-        """
-        # Actualizar paneles según el tipo de evento
+    def _process_event(self, event):
         if isinstance(event, TelemetryReceived):
-            self.telemetry_panel.add_telemetry(event)
-            
-        elif isinstance(event, AlertRaised):
-            self.alerts_panel.add_alert(event)
+            self.log_text.insert("end", f"[TELEMETRY] {event.vehicle_id} - {event.speed:.1f} km/h\n")
+            self.status_label.configure(text=f"Último: {event.vehicle_id} - {event.speed:.1f} km/h")
             
         elif isinstance(event, SystemHealthCheck):
-            self.status_panel.update_health(event)
+            self.log_text.insert("end", f"[HEALTH] Uptime: {event.uptime_seconds:.1f}s\n")
             
-        elif isinstance(event, SourceFailed):
-            self.status_panel.set_error(f"Source failed: {event.source_name}")
-            
-        elif isinstance(event, SystemState):
-            self.status_panel.set_state(event)
+        self.log_text.see("end")
+    
+    def _on_closing(self):
+        self.running = False
+        if self.event_bus:
+            self.event_bus.publish(ShutdownRequested(shutdown_type="graceful"))
+        self.destroy()
+    
+    def set_event_loop(self, loop):
+        self._loop = loop
     
     def run(self):
-        """Ejecuta la aplicación."""
         try:
             self.mainloop()
         except KeyboardInterrupt:
-            print("[UI] Interrupted by user")
             self._on_closing()
