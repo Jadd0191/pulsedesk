@@ -1,13 +1,13 @@
 """
 Fuentes de datos para PulseDesk RAD.
-
-Cada fuente implementa la interfaz Source y produce eventos.
 """
 
 from .base import Source
 from .heartbeat import HeartbeatSource
+from .telemetry_file import TelemetryFileSource
 
 __all__ = [
     'Source',
     'HeartbeatSource',
+    'TelemetryFileSource',
 ]
