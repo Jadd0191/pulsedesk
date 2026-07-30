@@ -50,22 +50,24 @@ class SystemState(Enum):
 
 
 # ============================================================================
-# Evento Base - Sin valores por defecto para evitar problemas de herencia
+# Evento Base
 # ============================================================================
 
 @dataclass(frozen=True)
 class Event:
     """
     Clase base para todos los eventos del sistema.
+    Todo evento debe tener un timestamp y un ID único.
     """
-    pass
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Telemetría
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TelemetryReceived(Event):
     """
     Evento emitido cuando se reciben datos de telemetría de un vehículo.
@@ -82,11 +84,9 @@ class TelemetryReceived(Event):
     engine_status: bool
     fuel_level: float      # 0-100%
     timestamp_data: datetime  # Timestamp de los datos (no del evento)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TelemetryBatchReceived(Event):
     """
     Evento emitido cuando se recibe un lote de datos de telemetría.
@@ -98,15 +98,13 @@ class TelemetryBatchReceived(Event):
     vehicles_data: List[Dict[str, Any]]
     count: int
     source: str
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Alertas
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class AlertRaised(Event):
     """
     Evento emitido cuando se genera una nueva alerta.
@@ -122,11 +120,9 @@ class AlertRaised(Event):
     category: str
     timestamp_data: datetime
     acknowledged: bool = False
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class AlertAcknowledged(Event):
     """
     Evento emitido cuando un operador reconoce una alerta.
@@ -138,11 +134,9 @@ class AlertAcknowledged(Event):
     alert_id: str
     acknowledged_by: str = "operator"
     timestamp_ack: datetime = field(default_factory=datetime.now)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class AlertCleared(Event):
     """
     Evento emitido cuando una alerta se resuelve y se limpia.
@@ -153,15 +147,13 @@ class AlertCleared(Event):
     """
     alert_id: str
     reason: str = "resolved"
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Fuentes de Datos
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SourceStarted(Event):
     """
     Evento emitido cuando una fuente de datos inicia correctamente.
@@ -173,11 +165,9 @@ class SourceStarted(Event):
     source_name: str
     source_type: str
     status: SourceStatus = SourceStatus.RUNNING
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SourceStopped(Event):
     """
     Evento emitido cuando una fuente de datos se detiene correctamente.
@@ -188,11 +178,9 @@ class SourceStopped(Event):
     """
     source_name: str
     reason: Optional[str] = None
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SourceFailed(Event):
     """
     Evento emitido cuando una fuente de datos falla.
@@ -206,11 +194,9 @@ class SourceFailed(Event):
     retry_count: int = 0
     max_retries: int = 3
     is_critical: bool = False
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SourceRecovered(Event):
     """
     Evento emitido cuando una fuente se recupera de un error.
@@ -221,15 +207,13 @@ class SourceRecovered(Event):
     """
     source_name: str
     recovery_time: float
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Estado del Sistema
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class StateChanged(Event):
     """
     Evento emitido cuando cambia el estado general del sistema.
@@ -241,11 +225,9 @@ class StateChanged(Event):
     old_state: SystemState
     new_state: SystemState
     reason: Optional[str] = None
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SystemHealthCheck(Event):
     """
     Evento de health check periódico.
@@ -257,15 +239,13 @@ class SystemHealthCheck(Event):
     status: str
     components_status: Dict[str, str]
     uptime_seconds: float
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Ciclo de Vida
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ShutdownRequested(Event):
     """
     Evento emitido cuando se solicita el apagado del sistema.
@@ -277,11 +257,9 @@ class ShutdownRequested(Event):
     shutdown_type: str
     reason: Optional[str] = None
     timeout_seconds: float = 5.0
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ShutdownComplete(Event):
     """
     Evento emitido cuando el apagado del sistema se completa.
@@ -293,11 +271,9 @@ class ShutdownComplete(Event):
     success: bool
     duration_seconds: float
     errors: List[str] = field(default_factory=list)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SystemInitialized(Event):
     """
     Evento emitido cuando el sistema completa su inicialización.
@@ -308,15 +284,13 @@ class SystemInitialized(Event):
     """
     config: Dict[str, Any]
     start_time: datetime = field(default_factory=datetime.now)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de UI y Usuario
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class UIAction(Event):
     """
     Evento genérico para acciones de UI.
@@ -328,11 +302,9 @@ class UIAction(Event):
     action: str
     target: str
     params: Dict[str, Any] = field(default_factory=dict)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class UserPreferenceChanged(Event):
     """
     Evento emitido cuando el usuario cambia preferencias.
@@ -344,15 +316,13 @@ class UserPreferenceChanged(Event):
     preference_name: str
     old_value: Any
     new_value: Any
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
 # Eventos de Workers y Tareas
 # ============================================================================
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TaskStarted(Event):
     """
     Evento emitido cuando una tarea en background inicia.
@@ -364,11 +334,9 @@ class TaskStarted(Event):
     task_id: str
     task_name: str
     description: str
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TaskCompleted(Event):
     """
     Evento emitido cuando una tarea en background finaliza.
@@ -382,11 +350,9 @@ class TaskCompleted(Event):
     success: bool
     duration_seconds: float
     result: Optional[Any] = None
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TaskFailed(Event):
     """
     Evento emitido cuando una tarea en background falla.
@@ -399,8 +365,6 @@ class TaskFailed(Event):
     task_name: str
     error_message: str
     retry_count: int = 0
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -410,9 +374,9 @@ class TaskFailed(Event):
 def get_event_metadata(event: Event) -> Dict[str, Any]:
     """Obtiene metadatos de un evento."""
     return {
-        "event_id": getattr(event, 'event_id', None),
+        "event_id": event.event_id,
         "event_type": event.__class__.__name__,
-        "timestamp": getattr(event, 'timestamp', datetime.now()).isoformat(),
+        "timestamp": event.timestamp.isoformat(),
     }
 
 

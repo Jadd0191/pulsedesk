@@ -136,12 +136,8 @@ class TestEventLoop:
         
         await asyncio.sleep(0.5)
         
-        # Simular evento de apagado
-        shutdown_event = ShutdownRequested(
-            shutdown_type="graceful",
-            reason="Test"
-        )
-        await loop._handle_event(shutdown_event)
+        # Solicitar apagado (sin argumentos adicionales)
+        await loop.shutdown(timeout=1.0)
         
         await asyncio.wait_for(task, timeout=2.0)
         
@@ -161,7 +157,9 @@ class TestEventLoop:
                     count += 1
                     if count > 3:
                         raise Exception("Simulated source failure")
-                    yield await super().__aiter__().__anext__()
+                    # Usar el iterador de la clase padre
+                    async for event in super().__aiter__():
+                        yield event
         
         source = FailingSource(name="FailingSource", interval=0.1)
         loop.register_source(source)

@@ -3,13 +3,14 @@ Core - Núcleo del sistema PulseDesk RAD
 
 Este paquete contiene los componentes fundamentales del sistema:
 - events: Catálogo de eventos
+- event_bus: Bus de eventos propio
 - loop: Event loop y ciclo de vida
 - sources: Fuentes de datos
 - state: Store de estado (por implementar)
-- event_bus: Bus de eventos (por implementar)
 """
 
 from .events import *
+from .event_bus import EventBus, subscribe_to
 from .loop import EventLoop
 from .sources import Source, HeartbeatSource
 
@@ -38,6 +39,9 @@ __all__ = [
     'AlertSeverity',
     'SourceStatus',
     'SystemState',
+    # EventBus
+    'EventBus',
+    'subscribe_to',
     # Loop
     'EventLoop',
     # Sources
